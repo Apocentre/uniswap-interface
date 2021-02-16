@@ -54,8 +54,31 @@ export default async function getTokenList(
       continue
     }
 
-    const json = await response.json()
-    if (!tokenListValidator(json)) {
+    const { records } = await response.json()
+
+    // TODO: get this thought our API so that it will be valid TokenList format https://tokenlists.org/
+
+    const tokens = records.map((token: any) => {
+      return {
+        ...token,
+        chainId: 1,
+        logoURI: "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110"
+      }
+    })
+    const tokenList = {
+      name: '0x Tokens',
+      version: {
+        major: 1,
+        minor: 0,
+        patch: 0
+      },
+      timestamp: '2021-02-12T01:33:04+00:00',
+      tokens
+    }
+
+    // TODO: -- until here
+
+    if (!tokenListValidator(tokenList)) {
       const validationErrors: string =
         tokenListValidator.errors?.reduce<string>((memo, error) => {
           const add = `${error.dataPath} ${error.message ?? ''}`
@@ -63,7 +86,7 @@ export default async function getTokenList(
         }, '') ?? 'unknown error'
       throw new Error(`Token list failed validation: ${validationErrors}`)
     }
-    return json
+    return tokenList
   }
   throw new Error('Unrecognized list URL protocol.')
 }

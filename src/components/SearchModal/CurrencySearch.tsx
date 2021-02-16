@@ -6,6 +6,7 @@ import { FixedSizeList } from 'react-window'
 import { Text } from 'rebass'
 import { useActiveWeb3React } from '../../hooks'
 import { useAllTokens, useToken, useIsUserAddedToken, useFoundOnInactiveList } from '../../hooks/Tokens'
+import { useFetch0xListCallback } from '../../hooks/useFetchListCallback'
 import { CloseIcon, TYPE, ButtonText, IconWrapper } from '../../theme'
 import { isAddress } from '../../utils'
 import Column from '../Column'
@@ -74,6 +75,8 @@ export function CurrencySearch({
   const [invertSearchOrder] = useState<boolean>(false)
 
   const allTokens = useAllTokens()
+  const fetch0xList = useFetch0xListCallback()
+
   // const inactiveTokens: Token[] | undefined = useFoundOnInactiveList(searchQuery)
 
   // if they input an address, use it
@@ -90,6 +93,10 @@ export function CurrencySearch({
       })
     }
   }, [isAddressSearch])
+
+  useEffect(() => {
+    fetch0xList('https://api.0x.org/swap/v1/tokens')
+  }, [])
 
   const showETH: boolean = useMemo(() => {
     const s = searchQuery.toLowerCase().trim()

@@ -35,6 +35,7 @@ export function useFetchListCallback(): (listUrl: string, sendDispatch?: boolean
     async (listUrl: string, sendDispatch = true) => {
       const requestId = nanoid()
       sendDispatch && dispatch(fetchTokenList.pending({ requestId, url: listUrl }))
+
       return getTokenList(listUrl, ensResolver)
         .then(tokenList => {
           sendDispatch && dispatch(fetchTokenList.fulfilled({ url: listUrl, tokenList, requestId }))
@@ -47,5 +48,52 @@ export function useFetchListCallback(): (listUrl: string, sendDispatch?: boolean
         })
     },
     [dispatch, ensResolver]
+  )
+}
+
+export function useFetch0xListCallback(): (listUrl: string, sendDispatch?: boolean) => Promise<TokenList> {
+  const { chainId } = useActiveWeb3React()
+  const dispatch = useDispatch<AppDispatch>()
+
+  // note: prevent dispatch if using for list search or unsupported list
+  return useCallback(
+    async (listUrl: string, sendDispatch = true) => {
+      const requestId = nanoid()
+      sendDispatch && dispatch(fetchTokenList.pending({ requestId, url: listUrl }))
+
+      const res = await fetch('https://api.0x.org/swap/v1/tokens')
+      const { records } = await res.json()
+      const tokens = records.map((token: any) => {
+        return {
+          ...token,
+          chainId,
+          logoURI: "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110"
+        }
+      })
+      const tokenList = {
+        name: '0x Tokens',
+        version: {
+          major: 1,
+          minor: 0,
+          patch: 0
+        },
+        timestamp: '2021-02-12T01:33:04+00:00',
+        tokens
+      }
+      dispatch(fetchTokenList.fulfilled({ url: listUrl, tokenList, requestId }))
+
+      return tokenList
+      // return getTokenList()
+      //   .then(tokenList => {
+      //     sendDispatch && dispatch(fetchTokenList.fulfilled({ url: listUrl, tokenList, requestId }))
+      //     return tokenList
+      //   })
+      //   .catch(error => {
+      //     console.debug(`Failed to get list at url ${listUrl}`, error)
+      //     sendDispatch && dispatch(fetchTokenList.rejected({ url: listUrl, requestId, errorMessage: error.message }))
+      //     throw error
+      //   })
+    },
+    [dispatch, chainId]
   )
 }
